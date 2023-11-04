@@ -1,0 +1,1 @@
+"""Wrapper around API calls to a strong external model, e.g. GPT-4."""

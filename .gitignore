@@ -1,3 +1,4 @@
-.ipynb_checkpoints/*
-.keys/*
-data/*
+.ipynb_checkpoints
+keys
+data
+__pycache__
