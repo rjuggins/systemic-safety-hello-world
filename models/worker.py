@@ -63,17 +63,19 @@ class Worker:
 
         print(f"Model loaded on {self.device}")
 
-    def set_pre_prompt(self, pre_prompt):
-        """Set a pre-prompt to be given at the start of each request."""
+    def generate_text(
+        self,
+        prompt,
+        max_response_len=50,
+        num_return_sequences=1,
+        temperature=1.0
+        ):
+        """Generate text from a prompt."""
 
-        self.pre_prompt = pre_prompt
-
-    def send_prompt(self, prompt):
-        """Prompt model for a response."""
-
-        # Add pre-prompt to prompt
-        prompt = self.pre_prompt + prompt
-
+        # Set max length based on prompt length and desired max response length
+        prompt_tokens = self.tokenizer.tokenize(prompt)
+        max_length = len(prompt_tokens) + max_response_len
+        
         # Tokenize input text
         input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
 
@@ -81,11 +83,12 @@ class Worker:
         with torch.no_grad():
             output = self.model.generate(
                 input_ids,
-                max_length=200,
-                num_return_sequences=1,
-                temperature=0.7,
+                max_length=max_length,
+                num_return_sequences=num_return_sequences,
+                temperature=temperature,
                 pad_token_id=self.tokenizer.eos_token_id
             )
 
         response = self.tokenizer.decode(output[0], skip_special_tokens=True)
-        print(response)
+
+        return response
