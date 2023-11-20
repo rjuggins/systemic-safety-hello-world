@@ -3,6 +3,7 @@
 import torch
 from torch import cuda
 from accelerate import infer_auto_device_map, init_empty_weights
+from langchain import PromptTemplate, FewShotPromptTemplate
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 
 
@@ -30,6 +31,56 @@ class Worker:
 
         with init_empty_weights():
             self.model = AutoModelForCausalLM.from_config(model_config)
+
+        # Create worker prompt template
+        self.create_prompt_template()
+
+    def create_prompt_template(self, examples=[]):
+        """Create FewShotPromptTemplate with hard-coded worker structure.
+        
+        Args:
+            examples (list(dict)): Dictionaries of 'query', 'answer' pairs
+                containing few shot examples
+        """
+
+        example_template = """
+        Human: {query}
+        AI: {answer}
+        """
+
+        example_prompt = PromptTemplate(
+            input_variables = ["query", "answer"],
+            template=example_template
+        )
+
+        prefix = """
+        You are an AI responding to questions from a human. Try and be helpful but not harmful.
+        Some examples of good behaviour are:
+        """
+
+        suffix = """
+        {query}
+        AI:
+        """
+
+        self.prompt_template = FewShotPromptTemplate(
+            examples=[],
+            example_prompt=example_prompt,
+            prefix=prefix,
+            suffix=suffix,
+            input_variables=["query"],
+            example_separator="\n"
+        )
+
+    def set_prompt_examples(self, examples):
+        """Set examples in FewShotPromptTemplate.
+        
+        Args:
+            examples (list(dict)): Dictionaries of 'query', 'answer' pairs
+                containing few shot examples
+        """
+
+        self.prompt_template.examples = examples
 
     def check_device_map(self, no_split_module_classes=[]):
         """Check model fits on GPUs.
@@ -65,12 +116,25 @@ class Worker:
 
     def generate_text(
         self,
-        prompt,
+        query,
         max_response_len=50,
         num_return_sequences=1,
         temperature=1.0
         ):
-        """Generate text from a prompt."""
+        """Generate text from a prompt.
+
+        Args:
+            query (str): Query for worker model
+            max_response_len (int): Maximum number of tokens in response
+            num_return_sequences (int): Number of different responses
+            temperature (float): Sampling temperature
+
+        Returns:
+            str: Response to query
+        """
+
+        # Add query to prompt template
+        prompt = self.prompt_template.format(query=query)
 
         # Set max length based on prompt length and desired max response length
         prompt_tokens = self.tokenizer.tokenize(prompt)
