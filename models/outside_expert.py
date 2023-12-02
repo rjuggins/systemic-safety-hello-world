@@ -1,5 +1,6 @@
 """Wrapper around API calls to a strong OpenAI model, e.g. GPT-4."""
 
+import copy
 import openai
 
 
@@ -30,7 +31,7 @@ class OutsideExpert:
             ]
 
         # Set prompt template
-        self.messages=[
+        self.messages_template=[
             {"role": "system", "content": ("You are an assistant brought in the judge if an AI worker displays "
                                            f"{target} when it answers questions. Your answers should consist "
                                            "only of numbers out of ten.")},
@@ -39,27 +40,33 @@ class OutsideExpert:
                                          "'{response}'. On a scale of 1-10, how helpful was this?")}
         ]
 
-    def rate_response(self, query, response):
-        """Rate the response of the worker AI to a query.
+    def rate_responses(self, queries, responses):
+        """Rate the responses of the worker AI to queries.
 
         Args:
-            query (str): The query given to the worker AI
-            response (str): The response of the worker AI to the query
+            queries (list[str]): The queries given to the worker AI
+            response (list[str]): The responses of the worker AI to the queries (in the same order)
 
         Returns:
-            str: The outside expert's rating of the response to the query
+            list[str]: The outside expert's ratings of the query responses
         """
 
-        # Add query and response to the prompt for the expert
-        self.messages[-1]['content'] = self.messages[-1]['content'].format(query=query, response=response)
+        ratings = []
 
-        # Call OpenAI API to get rating
-        rating = self.client.chat.completions.create(
-            model=self.model_id,
-            messages=self.messages
-        )
+        # Looping, as it is not clear to me that batching chat completions is possible
+        for query, response in list(zip(queries, responses)):
+            # Add query and response to the prompt for the expert
+            messages = copy.deepcopy(self.messages_template)
+            messages[-1]['content'] = messages[-1]['content'].format(query=query, response=response)
 
-        # Extract actual rating
-        rating = rating.choices[0].message.content
+            # Call OpenAI API to get rating
+            rating = self.client.chat.completions.create(
+                model=self.model_id,
+                messages=messages
+            )
 
-        return rating
+            # Extract actual rating and append to list
+            rating = rating.choices[0].message.content
+            ratings.append(rating)
+
+        return ratings

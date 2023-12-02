@@ -100,8 +100,10 @@ class Worker:
 
         self.tokenizer = AutoTokenizer.from_pretrained(
             self.model_id,
-            use_auth_token=self.hf_auth
+            use_auth_token=self.hf_auth,
+            padding_side='left'
         )
+        self.tokenizer.pad_token=self.tokenizer.eos_token
 
         self.model = AutoModelForCausalLM.from_pretrained(
             self.model_id,
@@ -116,32 +118,33 @@ class Worker:
 
     def generate_text(
         self,
-        query,
-        max_response_len=50,
+        queries,
+        min_additional_len=50,
         num_return_sequences=1,
         temperature=1.0
         ):
         """Generate text from a prompt.
 
         Args:
-            query (str): Query for worker model
-            max_response_len (int): Maximum number of tokens in response
-            num_return_sequences (int): Number of different responses
+            queries (list[str]): Queries for worker model
+            min_additional_len (int): Number of tokens in response for longest query
+            num_return_sequences (int): Number of different responses per query
             temperature (float): Sampling temperature
 
         Returns:
-            str: Response to query
+            list[str]: Responses to queries
         """
 
-        # Add query to prompt template
-        prompt = self.prompt_template.format(query=query)
+        # Add queries to prompt template
+        prompts = [self.prompt_template.format(query=query) for query in queries]
 
-        # Set max length based on prompt length and desired max response length
-        prompt_tokens = self.tokenizer.tokenize(prompt)
-        max_length = len(prompt_tokens) + max_response_len
+        # Set max length based on maximum prompt length and desired min additional length
+        prompt_tokens = [self.tokenizer.tokenize(prompt) for prompt in prompts]
+        max_prompt_len = max([len(prompt) for prompt in prompt_tokens])
+        max_length = max_prompt_len + min_additional_len
         
         # Tokenize input text
-        input_ids = self.tokenizer.encode(prompt, return_tensors="pt").to(self.device)
+        input_ids = self.tokenizer(prompts, padding=True, return_tensors="pt").to(self.device)['input_ids']
 
         # Generate text
         with torch.no_grad():
@@ -153,6 +156,6 @@ class Worker:
                 pad_token_id=self.tokenizer.eos_token_id
             )
 
-        response = self.tokenizer.decode(output[0], skip_special_tokens=True)
+        responses = [self.tokenizer.decode(response, skip_special_tokens=True) for response in output]
 
-        return response
+        return responses
