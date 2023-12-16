@@ -5,3 +5,4 @@ typing-inspect
 typing_extensions
 pydantic
 openai
+peft
