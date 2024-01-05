@@ -1,0 +1,9 @@
+num_steps: 10
+overseer_interval: 5
+user_data_path: './data/harmless-base/test.jsonl'
+helpfulness_test_data: './data/helpful-base/test.jsonl'
+harmlessness_test_data: './data/harmless-base/test.jsonl'
+model_id: 'princeton-nlp/Sheared-LLaMA-2.7B-ShareGPT'
+no_split_module_classes: 'LlamaDecoderLayer'
+expert_model_id: 'gpt-4'
+openai_key_path: './keys/openai_key.txt'
