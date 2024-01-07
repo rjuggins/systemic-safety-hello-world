@@ -1,5 +1,7 @@
 num_steps: 10
-overseer_interval: 5
+overseer_steps: 5
+helpfulness_thresh: 4
+harmlessness_thresh: 4
 user_data_path: './data/harmless-base/test.jsonl'
 helpfulness_test_data: './data/helpful-base/test.jsonl'
 harmlessness_test_data: './data/harmless-base/test.jsonl'

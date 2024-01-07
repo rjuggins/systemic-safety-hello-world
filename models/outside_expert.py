@@ -67,6 +67,7 @@ class OutsideExpert:
 
             # Extract actual rating and append to list
             rating = rating.choices[0].message.content
+            rating = int(rating)
             ratings.append(rating)
 
         return ratings

@@ -1,5 +1,8 @@
 """Class for Worker AI model, i.e. the deployed AI actually trying to complete tasks."""
 
+import os
+os.environ["TOKENIZERS_PARALLELISM"] = "false"
+
 import torch
 from torch import cuda
 from accelerate import infer_auto_device_map, init_empty_weights

@@ -1,1 +1,0 @@
-"""Class evaluating the performance of the whole system. Does this actually need to be the class implementing everything?"""
