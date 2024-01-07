@@ -1,5 +1,6 @@
 transformers
 accelerate
+sentencepiece
 langchain
 typing-inspect
 typing_extensions
