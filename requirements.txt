@@ -1,4 +1,5 @@
 transformers
+datasets
 accelerate
 sentencepiece
 langchain
@@ -6,3 +7,5 @@ typing-inspect
 typing_extensions
 pydantic
 openai
+peft
+trl
