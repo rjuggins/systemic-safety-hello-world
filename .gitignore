@@ -1,6 +1,8 @@
 .ipynb_checkpoints
 keys
 data
+models
 checkpoints
 logs
+wandb
 __pycache__

@@ -9,4 +9,4 @@ pydantic
 openai
 peft
 trl
-bitsandbytes
+wandb

@@ -3,10 +3,10 @@
 import yaml
 import numpy as np
 
-from models.worker import Worker
-from models.outside_expert import OutsideExpert
-from models.user import User
-from models.overseer import Overseer
+from components.worker import Worker
+from components.outside_expert import OutsideExpert
+from components.user import User
+from components.overseer import Overseer
 
 
 class System:
