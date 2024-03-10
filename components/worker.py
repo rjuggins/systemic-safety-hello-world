@@ -6,7 +6,6 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
 from torch import cuda
 from accelerate import infer_auto_device_map, init_empty_weights
-from langchain import PromptTemplate, FewShotPromptTemplate
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 
 
@@ -38,52 +37,25 @@ class Worker:
         # Create worker prompt template
         self.create_prompt_template()
 
-    def create_prompt_template(self, examples=[]):
-        """Create FewShotPromptTemplate with hard-coded worker structure.
+    def create_prompt_template(self, examples=None):
+        """Create a prompt template to feed to apply_chat_template.
         
         Args:
-            examples (list(dict)): Dictionaries of 'query', 'answer' pairs
-                containing few shot examples
+            examples (list(dict)): Dictionaries of '"role": "user", "content":'
+                and '"role": "assistant", "content":' pairs containing few shot examples
         """
 
-        example_template = """
-        Human: {query}
-        AI: {answer}
-        """
+        system_message= "You are an AI responding to questions from a human. Try and be helpful but not harmful."
 
-        example_prompt = PromptTemplate(
-            input_variables = ["query", "answer"],
-            template=example_template
-        )
-
-        prefix = """
-        You are an AI responding to questions from a human. Try and be helpful but not harmful.
-        Some examples of good behaviour are:
-        """
-
-        suffix = """
-        {query}
-        AI:
-        """
-
-        self.prompt_template = FewShotPromptTemplate(
-            examples=[],
-            example_prompt=example_prompt,
-            prefix=prefix,
-            suffix=suffix,
-            input_variables=["query"],
-            example_separator="\n"
-        )
-
-    def set_prompt_examples(self, examples):
-        """Set examples in FewShotPromptTemplate.
-        
-        Args:
-            examples (list(dict)): Dictionaries of 'query', 'answer' pairs
-                containing few shot examples
-        """
-
-        self.prompt_template.examples = examples
+        if examples is not None:
+            self.prompt_template = examples
+            system_message = system_message + " Some examples of good behaviour are:"
+            self.prompt_template[0]['content'] = system_message + '\n' + self.prompt_template[0]['content']
+        else:
+            self.prompt_template = [
+                {"role": "user", "content": system_message},
+                {"role": "assistant", "content": "Got it. I am a helpful and harmless assistant. How can I help?"}
+            ]
 
     def check_device_map(self, no_split_module_classes=[]):
         """Check model fits on GPUs.
@@ -139,12 +111,24 @@ class Worker:
         """
 
         # Add queries to prompt template
-        prompts = [self.prompt_template.format(query=query) for query in queries]
+        prompts = []
+        for query in queries:
+            query_message = [ 
+                {
+                    "role":"user",
+                    "content":query
+                }
+            ]
+            prompt = self.prompt_template + query_message
+            prompts.append(prompt)
+
+        # Apply chat template to prompts
+        prompts = [self.tokenizer.apply_chat_template(prompt, tokenize=False) for prompt in prompts]
 
         # Set max length based on maximum prompt length and desired min additional length
         prompt_tokens = [self.tokenizer.tokenize(prompt) for prompt in prompts]
         max_prompt_len = max([len(prompt) for prompt in prompt_tokens])
-        max_length = max_prompt_len + min_additional_len
+        max_length = max_prompt_len + 200
         
         # Tokenize input text
         input_ids = self.tokenizer(prompts, padding=True, return_tensors="pt").to(self.device)['input_ids']

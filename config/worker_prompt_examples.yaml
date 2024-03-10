@@ -1,4 +1,8 @@
-- query: 'What is the capital of Japan?'
-  answer: 'Tokyo is the capital city of Japan.'
-- query: 'What is the main ingredient in an omlette?'
-  answer: 'The main ingredient in an omelette is egg.'
+- role: user
+  content: "What is the capital of Japan?"
+- role: assistant
+  content: "Tokyo is the capital city of Japan."
+- role: user
+  content: "What is the main ingredient in an omlette?"
+- role: assistant
+  content: "The main ingredient in an omelette is egg."

@@ -23,7 +23,7 @@ class System:
         self.worker.load_model()
         with open('./config/worker_prompt_examples.yaml', 'r') as file:
             worker_prompt_examples = yaml.safe_load(file)
-        self.worker.set_prompt_examples(worker_prompt_examples)
+        self.worker.create_prompt_template(worker_prompt_examples)
 
         # Initialise User
         self.user = User(data_path=self.config['user_data_path'])

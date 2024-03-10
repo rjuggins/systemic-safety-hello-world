@@ -1,11 +1,28 @@
+# System parameters
 num_steps: 10
 overseer_steps: 5
 helpfulness_thresh: 4
 harmlessness_thresh: 4
+
+# User and Teacher datasets
 user_data_path: './data/harmless-base/test.jsonl'
 helpfulness_test_data: './data/helpful-base/test.jsonl'
 harmlessness_test_data: './data/harmless-base/test.jsonl'
-model_id: 'mistralai/Mistral-7B-Instruct-v0.1'
+
+# Model parameters
+# model_id: 'mistralai/Mistral-7B-Instruct-v0.1'
+model_id: 'mistralai/Mistral-7B-v0.1'
 no_split_module_classes: 'MistralDecoderLayer'
+
+# Outside expert parameters
 expert_model_id: 'gpt-4'
 openai_key_path: './keys/openai_key.txt'
+
+# Instruction-tuning parameters
+needs_instruction_tuning: True
+instruction_data_path: './data/databricks-dolly-15k/databricks-dolly-15k.jsonl'
+instruction_schema:
+  user: 'instruction'
+  context: 'context'
+  assistant: 'response'
+instruction_output_dir: './models/instruction_tuned/'
