@@ -3,6 +3,7 @@ This is distinct from the Teacher class, which is used to update models during t
 of the system."""
 
 import os
+
 os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import json
@@ -29,18 +30,17 @@ class Instructor:
                     hf_auth (str): Authorisation token for Hugging Face, e.g. for Llama 2
         """
 
-        self.model_id = config['model_id']
-        self.data_path = config['instruction_data_path']
-        self.schema = config['instruction_schema']
+        self.model_id = config["model_id"]
+        self.data_path = config["instruction_data_path"]
+        self.schema = config["instruction_schema"]
 
-        self.hf_auth = config.get('hf_auth')
+        self.hf_auth = config.get("hf_auth")
 
-        self.device = f'cuda:{cuda.current_device()}' if cuda.is_available() else 'cpu'
+        self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
 
         model_config = AutoConfig.from_pretrained(
-            self.model_id,
-            use_auth_token=self.hf_auth
+            self.model_id, use_auth_token=self.hf_auth
         )
 
         with init_empty_weights():
@@ -54,8 +54,7 @@ class Instructor:
         """
 
         self.device_map = infer_auto_device_map(
-            self.model,
-            no_split_module_classes=no_split_module_classes
+            self.model, no_split_module_classes=no_split_module_classes
         )
         print(self.device_map)
 
@@ -63,16 +62,12 @@ class Instructor:
         """Load model weights and initialise tokenizer."""
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id,
-            use_auth_token=self.hf_auth,
-            padding_side='left'
+            self.model_id, use_auth_token=self.hf_auth, padding_side="left"
         )
-        self.tokenizer.pad_token=self.tokenizer.eos_token
+        self.tokenizer.pad_token = self.tokenizer.eos_token
 
         self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            device_map=self.device_map,
-            use_auth_token=self.hf_auth
+            self.model_id, device_map=self.device_map, use_auth_token=self.hf_auth
         )
 
         print(f"Model loaded on {self.device}")
@@ -86,29 +81,34 @@ class Instructor:
 
         # Load raw data
         instruction_data = []
-        with open(self.data_path, 'r') as file:
+        with open(self.data_path, "r") as file:
             for line in file:
                 instruction_data.append(json.loads(line))
 
         # Create keys for components of instruction data
-        user = self.schema['user']
-        context = self.schema['context']
-        assistant = self.schema['assistant']
+        user = self.schema["user"]
+        context = self.schema["context"]
+        assistant = self.schema["assistant"]
 
         # Reformat data with role/content structure
         examples = []
         for instruction in instruction_data:
-            instruction_message = [{'role':'user'}, {'role':'assistant'}]
-            
+            instruction_message = [{"role": "user"}, {"role": "assistant"}]
+
             if len(instruction[context]) > 0:
-                instruction_message[0]['content'] = instruction[user] + ' ' + instruction[context]
+                instruction_message[0]["content"] = (
+                    instruction[user] + " " + instruction[context]
+                )
             else:
-                instruction_message[0]['content'] = instruction[user]
-            instruction_message[1]['content'] = instruction[assistant]
+                instruction_message[0]["content"] = instruction[user]
+            instruction_message[1]["content"] = instruction[assistant]
             examples.append(instruction_message)
 
         # Apply chat template to examples
-        examples = [self.tokenizer.apply_chat_template(instruction, tokenize=False) for instruction in examples]
+        examples = [
+            self.tokenizer.apply_chat_template(instruction, tokenize=False)
+            for instruction in examples
+        ]
 
         # Load into Dataset classes
         df_examples = pd.DataFrame(examples, columns=["text"])
@@ -121,8 +121,8 @@ class Instructor:
 
             # Split the dataset into training and testing
             split_datasets = full_dataset.train_test_split(test_size=test_size)
-            self.train_dataset = split_datasets['train']
-            self.test_dataset = split_datasets['test']
+            self.train_dataset = split_datasets["train"]
+            self.test_dataset = split_datasets["test"]
 
     def tune_model(self):
         """Instruction-tune model."""

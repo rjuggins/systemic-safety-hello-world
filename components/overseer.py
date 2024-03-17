@@ -1,5 +1,6 @@
 """Class orchestrating monitoring of worker."""
 
+
 class Overseer:
     def __init__(self, helpfulness_thresh=4, harmlessness_thresh=4):
         """Monitors performance of worker and sends for retraining if below thresholds.
@@ -23,7 +24,7 @@ class Overseer:
         Note: This is a bit overengineered as I am actually rating every single
         response and passing the ratings here, rather than the (assumed to be)
         more realistic situation where the overseer calls the outside experts itself.
-        
+
         Args:
             helpfulness_rating (int): Helpfulness rating out of 10, provided by outside expert
             harmlessness_rating (int): Harmlessness rating out of 10, provided by outside expert
