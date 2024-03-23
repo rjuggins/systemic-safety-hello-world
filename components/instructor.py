@@ -11,6 +11,7 @@ import torch
 import pandas as pd
 from datasets import Dataset
 from torch import cuda
+from functools import partial
 from accelerate import infer_auto_device_map, init_empty_weights
 from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
 
@@ -28,6 +29,7 @@ class Instructor:
                         plus context if exists (which is appended to user content)
                 May contain:
                     hf_auth (str): Authorisation token for Hugging Face, e.g. for Llama 2
+                    max_length (int): Max sequence length for model
         """
 
         self.model_id = config["model_id"]
@@ -35,6 +37,12 @@ class Instructor:
         self.schema = config["instruction_schema"]
 
         self.hf_auth = config.get("hf_auth")
+
+        # If max_length defined in config, use that value, if not us default
+        if config.get("max_length") is None:
+            self.max_length = 1024
+        else:
+            self.max_length = config["max_length"]
 
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
@@ -72,7 +80,7 @@ class Instructor:
 
         print(f"Model loaded on {self.device}")
 
-    def load_dataset(self, test_size=0.0):
+    def load_data(self, test_size=0.0):
         """Load instruction dataset, reformat, and load into Dataset objects.
 
         Args:
@@ -111,18 +119,43 @@ class Instructor:
         ]
 
         # Load into Dataset classes
-        df_examples = pd.DataFrame(examples, columns=["text"])
-
         if test_size == 0:
-            self.train_dataset = Dataset.from_pandas(df_examples)
+            self.train_dataset = Dataset.from_dict({'text':examples})
             self.test_dataset = None
         else:
-            full_dataset = Dataset.from_pandas(df_examples)
+            full_dataset = Dataset.from_dict({'text':examples})
 
             # Split the dataset into training and testing
             split_datasets = full_dataset.train_test_split(test_size=test_size)
             self.train_dataset = split_datasets["train"]
             self.test_dataset = split_datasets["test"]
+
+    @staticmethod
+    def encode(examples, tokenizer, max_length):
+        """Static method to map tokenizer over dataset. Fails if tries to use self.tokenizer."""
+        return tokenizer(
+            examples["text"],
+            padding="max_length",
+            truncation=True,
+            max_length=max_length
+            )
+
+    def tokenize_data(self):
+        """Tokenize train and test datasets."""
+
+        # Prefill self.encode tokenizer argument
+        encode_with_tokenizer = partial(
+            self.encode, tokenizer=self.tokenizer, max_length=self.max_length
+            )
+
+        # Tokenize train dataset
+        self.train_dataset = self.train_dataset.map(encode_with_tokenizer, batched=True)
+        self.train_dataset = self.train_dataset.remove_columns("text")
+
+        # If exists, tokenize test dataset
+        if self.test_dataset is not None:
+            self.test_dataset = self.test_dataset.map(encode_with_tokenizer, batched=True)
+            self.test_dataset = self.test_dataset.remove_columns("text")
 
     def tune_model(self):
         """Instruction-tune model."""
