@@ -14,6 +14,7 @@ harmlessness_test_data: './data/harmless-base/test.jsonl'
 model_id: 'mistralai/Mistral-7B-v0.1'
 no_split_module_classes: 'MistralDecoderLayer'
 max_length: 1024
+hf_key_path: '../keys/hf_key.txt'
 
 # Outside expert parameters
 expert_model_id: 'gpt-4'

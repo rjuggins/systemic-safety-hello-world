@@ -36,7 +36,12 @@ class Instructor:
         self.data_path = config["instruction_data_path"]
         self.schema = config["instruction_schema"]
 
-        self.hf_auth = config.get("hf_auth")
+        hf_key_path = config.get("hf_key_path")
+        if hf_key_path is not None:
+            with open(hf_key_path, "r") as file:
+                self.hf_auth = file.read().strip()
+        else:
+            self.hf_auth = None
 
         # If max_length defined in config, use that value, if not us default
         if config.get("max_length") is None:

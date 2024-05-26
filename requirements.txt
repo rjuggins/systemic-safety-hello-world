@@ -10,3 +10,5 @@ openai
 peft
 trl
 wandb
+ipywidgets
+bitsandbytes
