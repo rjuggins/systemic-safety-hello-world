@@ -13,7 +13,12 @@ from datasets import Dataset
 from torch import cuda
 from functools import partial
 from accelerate import infer_auto_device_map, init_empty_weights
-from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig
+)
 
 
 class Instructor:
@@ -53,35 +58,35 @@ class Instructor:
         print(f"Device: {self.device}")
 
         model_config = AutoConfig.from_pretrained(
-            self.model_id, use_auth_token=self.hf_auth
+            self.model_id, token=self.hf_auth
         )
-
-        with init_empty_weights():
-            self.model = AutoModelForCausalLM.from_config(model_config)
-
-    def check_device_map(self, no_split_module_classes=[]):
-        """Check model fits on GPUs.
-        Args:
-            no_split_module_classes (list(str)): Class names of layers not to split
-                between devices
-        """
-
-        self.device_map = infer_auto_device_map(
-            self.model, no_split_module_classes=no_split_module_classes
-        )
-        print(self.device_map)
+        
+        self.device_map = 'auto'
 
     def load_model(self):
         """Load model weights and initialise tokenizer."""
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id, use_auth_token=self.hf_auth, padding_side="left"
+            self.model_id, token=self.hf_auth, padding_side="left"
         )
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id, device_map=self.device_map, use_auth_token=self.hf_auth
+        self.bnb_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype="float16",
+            bnb_4bit_use_double_quant=False,
         )
+
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.model_id,
+            quantization_config=self.bnb_config,
+            device_map=self.device_map,
+            token=self.hf_auth
+        )
+
+        self.model.enable_input_require_grads()
+        self.model.gradient_checkpointing_enable()
 
         print(f"Model loaded on {self.device}")
 
