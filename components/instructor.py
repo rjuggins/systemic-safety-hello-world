@@ -40,6 +40,7 @@ class Instructor:
         self.model_id = config["model_id"]
         self.data_path = config["instruction_data_path"]
         self.schema = config["instruction_schema"]
+        self.quantization = config["quantization"]
 
         hf_key_path = config.get("hf_key_path")
         if hf_key_path is not None:
@@ -71,19 +72,27 @@ class Instructor:
         )
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
-        self.bnb_config = BitsAndBytesConfig(
-            load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_compute_dtype="float16",
-            bnb_4bit_use_double_quant=False,
-        )
+        if self.quantization == True:
+            self.bnb_config = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_compute_dtype="float16",
+                bnb_4bit_use_double_quant=False,
+            )
 
-        self.model = AutoModelForCausalLM.from_pretrained(
-            self.model_id,
-            quantization_config=self.bnb_config,
-            device_map=self.device_map,
-            token=self.hf_auth
-        )
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_id,
+                quantization_config=self.bnb_config,
+                device_map=self.device_map,
+                token=self.hf_auth
+            )
+
+        else:
+            self.model = AutoModelForCausalLM.from_pretrained(
+                self.model_id,
+                device_map=self.device_map,
+                token=self.hf_auth
+            )
 
         self.model.enable_input_require_grads()
         self.model.gradient_checkpointing_enable()

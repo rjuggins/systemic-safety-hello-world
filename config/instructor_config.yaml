@@ -1,5 +1,7 @@
 # Model parameters
 model_id: 'mistralai/Mistral-7B-v0.1'
+# model_id: 'gpt2'
+quantization: True
 max_length: 1024
 hf_key_path: '../keys/hf_key.txt'
 
