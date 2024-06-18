@@ -2,7 +2,8 @@
 model_id: 'mistralai/Mistral-7B-v0.1'
 # model_id: 'gpt2'
 quantization: True
-max_length: 1024
+max_length: 512
+sliding_window: 256
 hf_key_path: '../keys/hf_key.txt'
 
 # Data parameters
@@ -15,7 +16,7 @@ instruction_schema:
 # LoRA parameters
 r: 16
 lora_alpha: 16
-lora_dropout: 0.05
+lora_dropout: 0.1
 bias: "none"
 task_type: "CAUSAL_LM"
 target_modules:

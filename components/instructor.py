@@ -49,11 +49,17 @@ class Instructor:
         else:
             self.hf_auth = None
 
-        # If max_length defined in config, use that value, if not us default
+        # If max_length defined in config, use that value, if not use default
         if config.get("max_length") is None:
-            self.max_length = 1024
+            self.max_length = 512
         else:
             self.max_length = config["max_length"]
+
+        # If sliding_window defined in config, use that value, if not use default
+        if config.get("sliding_window") is None:
+            self.sliding_window = self.max_length // 2
+        else:
+            self.sliding_window = config["sliding_window"]
 
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
@@ -68,7 +74,7 @@ class Instructor:
         """Load model weights and initialise tokenizer."""
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id, token=self.hf_auth, padding_side="left"
+            self.model_id, token=self.hf_auth, padding_side="right" # left is for inference
         )
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -94,6 +100,7 @@ class Instructor:
                 token=self.hf_auth
             )
 
+        self.model.config.window = self.sliding_window
         self.model.enable_input_require_grads()
         self.model.gradient_checkpointing_enable()
 
