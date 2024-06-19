@@ -41,6 +41,7 @@ class Instructor:
         self.data_path = config["instruction_data_path"]
         self.schema = config["instruction_schema"]
         self.quantization = config["quantization"]
+        self.bnb_params = config.get('bnb_params')
 
         hf_key_path = config.get("hf_key_path")
         if hf_key_path is not None:
@@ -79,12 +80,7 @@ class Instructor:
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
         if self.quantization == True:
-            self.bnb_config = BitsAndBytesConfig(
-                load_in_4bit=True,
-                bnb_4bit_quant_type="nf4",
-                bnb_4bit_compute_dtype="float16",
-                bnb_4bit_use_double_quant=False,
-            )
+            self.bnb_config = BitsAndBytesConfig(**self.bnb_params)
 
             self.model = AutoModelForCausalLM.from_pretrained(
                 self.model_id,

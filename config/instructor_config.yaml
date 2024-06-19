@@ -3,41 +3,59 @@ model_id: 'mistralai/Mistral-7B-v0.1'
 # model_id: 'gpt2'
 quantization: True
 max_length: 512
+packing: False
 sliding_window: 256
 hf_key_path: '../keys/hf_key.txt'
 
 # Data parameters
 instruction_data_path: './data/databricks-dolly-15k/databricks-dolly-15k.jsonl'
+# instruction_data_path: './data/python_code_instructions_18k_alpaca/python_code_instructions_18k_alpaca.jsonl'
 instruction_schema:
   user: 'instruction'
   context: 'context'
   assistant: 'response'
+  # user: 'instruction'
+  # context: 'input'
+  # assistant: 'output'
 
-# LoRA parameters
-r: 16
-lora_alpha: 16
-lora_dropout: 0.1
-bias: "none"
-task_type: "CAUSAL_LM"
-target_modules:
-  - "q_proj"
-  - "k_proj"
-  - "v_proj"
-  - "o_proj"
-  - "gate_proj"
-  - "up_proj"
-  - "down_proj"
-  - "lm_head"
+bnb_params:
+  load_in_4bit: True
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_use_double_quant: False
 
-# Training parameters
-output_dir: './models/instruction_tuned/'
-per_device_train_batch_size: 4
-gradient_accumulation_steps: 4
-gradient_checkpointing: True
-learning_rate: 2.e-5
-lr_scheduler_type: "constant"
-max_steps: 200
-logging_steps: 1
-optim: "paged_adamw_32bit"
-warmup_ratio: 0.03
-report_to: []
+lora_params: 
+  r: 32
+  lora_alpha: 16
+  lora_dropout: 0.1
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+    - "lm_head"
+
+training_params: 
+  output_dir: "./models/instruction_tuned/"
+  per_device_train_batch_size: 8
+  per_device_eval_batch_size: 8
+  gradient_accumulation_steps: 4
+  max_grad_norm: 0.3
+  gradient_checkpointing: True
+  learning_rate: 2.e-5
+  lr_scheduler_type: "constant"
+  max_steps: 200
+  fp16: False
+  bf16: True
+  group_by_length: True
+  save_steps: 200
+  logging_steps: 2
+  optim: "paged_adamw_32bit"
+  warmup_ratio: 0.03
+  evaluation_strategy: "steps"
+  report_to: []
