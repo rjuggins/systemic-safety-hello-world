@@ -49,12 +49,13 @@ training_params:
   gradient_checkpointing: True
   learning_rate: 2.e-5
   lr_scheduler_type: "constant"
-  max_steps: 200
+  # max_steps: 200
+  num_train_epochs: 0.5
   fp16: False
   bf16: True
   group_by_length: True
-  save_steps: 200
-  logging_steps: 2
+  save_steps: 225
+  logging_steps: 25
   optim: "paged_adamw_32bit"
   warmup_ratio: 0.03
   evaluation_strategy: "steps"
