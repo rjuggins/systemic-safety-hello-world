@@ -8,17 +8,20 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 
 import json
 import torch
-import pandas as pd
 from datasets import Dataset
 from torch import cuda
 from functools import partial
-from accelerate import infer_auto_device_map, init_empty_weights
+from peft import LoraConfig, get_peft_model
 from transformers import (
     AutoConfig,
     AutoTokenizer,
     AutoModelForCausalLM,
-    BitsAndBytesConfig
+    BitsAndBytesConfig,
+    TrainingArguments
 )
+from trl import SFTTrainer
+from huggingface_hub import HfApi
+from huggingface_hub.utils._errors import RepositoryNotFoundError
 
 
 class Instructor:
@@ -42,6 +45,8 @@ class Instructor:
         self.schema = config["instruction_schema"]
         self.quantization = config["quantization"]
         self.bnb_params = config.get('bnb_params')
+        self.lora_params = config["lora_params"]
+        self.training_params = config["training_params"]
 
         hf_key_path = config.get("hf_key_path")
         if hf_key_path is not None:
@@ -62,6 +67,8 @@ class Instructor:
         else:
             self.sliding_window = config["sliding_window"]
 
+        self.packing = config.get("packing")
+
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
 
@@ -70,6 +77,7 @@ class Instructor:
         )
         
         self.device_map = 'auto'
+        self.model_repo_id = config.get("model_repo_id")
 
     def load_model(self):
         """Load model weights and initialise tokenizer."""
@@ -152,34 +160,87 @@ class Instructor:
             self.train_dataset = split_datasets["train"]
             self.test_dataset = split_datasets["test"]
 
-    @staticmethod
-    def encode(examples, tokenizer, max_length):
-        """Static method to map tokenizer over dataset. Fails if tries to use self.tokenizer."""
-        return tokenizer(
-            examples["text"],
-            padding="max_length",
-            truncation=True,
-            max_length=max_length
-            )
+    # @staticmethod
+    # def encode(examples, tokenizer, max_length):
+    #     """Static method to map tokenizer over dataset. Fails if tries to use self.tokenizer."""
+    #     return tokenizer(
+    #         examples["text"],
+    #         padding="max_length",
+    #         truncation=True,
+    #         max_length=max_length
+    #         )
 
-    def tokenize_data(self):
-        """Tokenize train and test datasets."""
+    # def tokenize_data(self):
+    #     """Tokenize train and test datasets."""
 
-        # Prefill self.encode tokenizer argument
-        encode_with_tokenizer = partial(
-            self.encode, tokenizer=self.tokenizer, max_length=self.max_length
-            )
+    #     # Prefill self.encode tokenizer argument
+    #     encode_with_tokenizer = partial(
+    #         self.encode, tokenizer=self.tokenizer, max_length=self.max_length
+    #         )
 
-        # Tokenize train dataset
-        self.train_dataset = self.train_dataset.map(encode_with_tokenizer, batched=True)
-        self.train_dataset = self.train_dataset.remove_columns("text")
+    #     # Tokenize train dataset
+    #     self.train_dataset = self.train_dataset.map(encode_with_tokenizer, batched=True)
+    #     self.train_dataset = self.train_dataset.remove_columns("text")
 
-        # If exists, tokenize test dataset
-        if self.test_dataset is not None:
-            self.test_dataset = self.test_dataset.map(encode_with_tokenizer, batched=True)
-            self.test_dataset = self.test_dataset.remove_columns("text")
+    #     # If exists, tokenize test dataset
+    #     if self.test_dataset is not None:
+    #         self.test_dataset = self.test_dataset.map(encode_with_tokenizer, batched=True)
+    #         self.test_dataset = self.test_dataset.remove_columns("text")
 
-    def tune_model(self):
+    def train_model(self):
         """Instruction-tune model."""
 
-        pass
+        # LoRA configuration
+        peft_config = LoraConfig(**self.lora_params)
+
+        lora_model = get_peft_model(self.model, peft_config)
+        lora_model.print_trainable_parameters()
+
+        # Training arguments
+        training_args = TrainingArguments(**self.training_params)
+
+        # Create trainer
+        trainer = SFTTrainer(
+            model=self.model,
+            train_dataset=self.train_dataset,
+            eval_dataset=self.test_dataset,
+            peft_config=peft_config,
+            dataset_text_field="text",
+            max_seq_length=self.max_length,
+            tokenizer=self.tokenizer,
+            args=training_args,
+            packing=self.packing
+        )
+
+        trainer.train()
+
+    def push_model(self, checkpoint=False):
+        """Push model or checkpoint to Hugging Face Hub.
+
+        Args:
+            checkpoint (bool): Push checkpoint specified in config rather than self.model
+        """
+
+        # Initialize API
+        api = HfApi()
+
+        # Function to check if the repo exists
+        def repo_exists(repo_id, token):
+            try:
+                api.repo_info(repo_id=repo_id, token=token)
+                return True
+            except RepositoryNotFoundError:
+                return False
+
+        # Check if the repository exists
+        if repo_exists(self.model_repo_id, self.hf_auth):
+            print(f"Not pushing model as repository {self.model_repo_id} already exists.")
+        else:
+            if checkpoint == True:
+                model_dir = os.path.join(self.training_params["output_dir"], self.checkpoint_name)
+                # Clear GPU cache
+                torch.cuda.empty_cache()
+                checkpoint_model = AutoModelForCausalLM.from_pretrained(model_dir, device_map='auto')
+                checkpoint_model.push_to_hub(self.model_repo_id, use_auth_token=self.hf_auth)
+            else:
+                self.model.push_to_hub(self.model_repo_id, use_auth_token=self.hf_auth)
