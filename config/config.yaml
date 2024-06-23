@@ -12,13 +12,20 @@ harmlessness_test_data: './data/harmless-base/test.jsonl'
 # Model parameters
 # model_id: 'mistralai/Mistral-7B-Instruct-v0.1'
 model_id: 'mistralai/Mistral-7B-v0.1'
-no_split_module_classes: 'MistralDecoderLayer'
-max_length: 1024
+lora_id: rjuggins/instruction_mistral_7b_v1_225_test
+quantization: True
+max_length: 512
 hf_key_path: '../keys/hf_key.txt'
+
+bnb_params:
+  load_in_4bit: True
+  bnb_4bit_quant_type: "nf4"
+  bnb_4bit_compute_dtype: "float16"
+  bnb_4bit_use_double_quant: False
 
 # Outside expert parameters
 expert_model_id: 'gpt-4'
-openai_key_path: './keys/openai_key.txt'
+openai_key_path: '../keys/openai_key.txt'
 
 # Instruction-tuning parameters
 needs_instruction_tuning: True

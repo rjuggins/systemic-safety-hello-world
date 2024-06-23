@@ -1,6 +1,5 @@
 # Model parameters
 model_id: 'mistralai/Mistral-7B-v0.1'
-# model_id: 'gpt2'
 quantization: True
 max_length: 512
 packing: False
@@ -8,6 +7,9 @@ sliding_window: 256
 hf_key_path: '../keys/hf_key.txt'
 checkpoint_name: checkpoint-225
 model_repo_id: rjuggins/instruction_mistral_7b_v1_225_test_2
+seed: 42
+test_frac: 0.005
+push_checkpoint: True
 
 # Data parameters
 instruction_data_path: './data/databricks-dolly-15k/databricks-dolly-15k.jsonl'
