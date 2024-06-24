@@ -6,10 +6,9 @@ packing: False
 sliding_window: 256
 hf_key_path: '../keys/hf_key.txt'
 checkpoint_name: checkpoint-225
-model_repo_id: rjuggins/instruction_mistral_7b_v1_225_test_2
+model_repo_id: rjuggins/instruction_mistral_7b_v1_2_epochs_test
 seed: 42
-test_frac: 0.005
-push_checkpoint: True
+test_frac: 0.02
 
 # Data parameters
 instruction_data_path: './data/databricks-dolly-15k/databricks-dolly-15k.jsonl'
@@ -46,15 +45,15 @@ lora_params:
 
 training_params: 
   output_dir: "./models/instruction_tuned/"
-  per_device_train_batch_size: 8
-  per_device_eval_batch_size: 8
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
   gradient_accumulation_steps: 4
   max_grad_norm: 0.3
   gradient_checkpointing: True
   learning_rate: 2.e-5
   lr_scheduler_type: "constant"
   # max_steps: 200
-  num_train_epochs: 0.5
+  num_train_epochs: 2
   fp16: False
   bf16: True
   group_by_length: True

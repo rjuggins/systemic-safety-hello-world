@@ -19,4 +19,5 @@ if __name__ == "__main__":
     instructor.load_model()
     instructor.load_data(test_size=config["test_frac"])
     instructor.train_model()
-    instructor.push_model(checkpoint=config["push_checkpoint"])
+    instructor.push_model()
+    

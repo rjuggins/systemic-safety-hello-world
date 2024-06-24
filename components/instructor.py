@@ -78,6 +78,7 @@ class Instructor:
         
         self.device_map = 'auto'
         self.model_repo_id = config.get("model_repo_id")
+        self.checkpoint_name = config.get("checkpoint_name")
 
     def load_model(self):
         """Load model weights and initialise tokenizer."""
@@ -214,12 +215,8 @@ class Instructor:
 
         trainer.train()
 
-    def push_model(self, checkpoint=False):
-        """Push model or checkpoint to Hugging Face Hub.
-
-        Args:
-            checkpoint (bool): Push checkpoint specified in config rather than self.model
-        """
+    def push_model(self):
+        """Push model or checkpoint to Hugging Face Hub."""
 
         # Initialize API
         api = HfApi()
@@ -236,7 +233,7 @@ class Instructor:
         if repo_exists(self.model_repo_id, self.hf_auth):
             print(f"Not pushing model as repository {self.model_repo_id} already exists.")
         else:
-            if checkpoint == True:
+            if self.checkpoint_name is not None:
                 model_dir = os.path.join(self.training_params["output_dir"], self.checkpoint_name)
                 # Clear GPU cache
                 torch.cuda.empty_cache()

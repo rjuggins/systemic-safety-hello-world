@@ -13,6 +13,7 @@ harmlessness_test_data: './data/harmless-base/test.jsonl'
 # model_id: 'mistralai/Mistral-7B-Instruct-v0.1'
 model_id: 'mistralai/Mistral-7B-v0.1'
 lora_id: rjuggins/instruction_mistral_7b_v1_225_test
+lora_test_id: rjuggins/instruction_mistral_7b_v1_2_epochs_test
 quantization: True
 max_length: 512
 hf_key_path: '../keys/hf_key.txt'
