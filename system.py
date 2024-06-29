@@ -19,9 +19,6 @@ class System:
 
         # Initialise Worker
         self.worker = Worker(self.config["model_id"])
-        self.worker.check_device_map(
-            no_split_module_classes=self.config["no_split_module_classes"]
-        )
         self.worker.load_model()
         with open("./config/worker_prompt_examples.yaml", "r") as file:
             worker_prompt_examples = yaml.safe_load(file)

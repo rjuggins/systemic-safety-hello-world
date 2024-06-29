@@ -32,12 +32,20 @@ class Instructor:
             config (dict): Configuration parameters
                 Must contain:
                     model_id (str): Path to Hugging Face base model
-                    data_path (str): Path to instruction-tuning dataset
+                    instruction_data_path (str): Path to instruction-tuning dataset
                     instruction_schema (dict): Keys for user and assistant content in dataset,
                         plus context if exists (which is appended to user content)
+                    quantization (bool): Whether to quantize model
+                    lora_params (dict): LoraConfig parameters
+                    training_params (dict): TrainingArguments parameters
+                    packing (bool): Packing parameter in SFTTrainer
                 May contain:
-                    hf_auth (str): Authorisation token for Hugging Face, e.g. for Llama 2
+                    bnb_params (dict): BitsAndBytesConfig parameters if quantizing model
+                    hf_key_path (str): Authorisation token for Hugging Face
                     max_length (int): Max sequence length for model
+                    sliding_window (int): Sliding window for model
+                    model_repo_id (str): Name of HF repo to push trained model to
+                    checkpoint_name (str): Name of model checkpoint to be pushed
         """
 
         self.model_id = config["model_id"]
@@ -47,6 +55,7 @@ class Instructor:
         self.bnb_params = config.get('bnb_params')
         self.lora_params = config["lora_params"]
         self.training_params = config["training_params"]
+        self.packing = config["packing"]
 
         hf_key_path = config.get("hf_key_path")
         if hf_key_path is not None:
@@ -66,8 +75,6 @@ class Instructor:
             self.sliding_window = self.max_length // 2
         else:
             self.sliding_window = config["sliding_window"]
-
-        self.packing = config.get("packing")
 
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
