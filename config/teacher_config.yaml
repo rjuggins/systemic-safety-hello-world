@@ -1,0 +1,66 @@
+# Teacher parameters
+taught_model_id: "instruction_mistral_7b_v1_2_epochs_live_dpo"
+max_length: 1536
+max_prompt_length: 1024
+
+lora_params: 
+  r: 32
+  lora_alpha: 16
+  lora_dropout: 0.1
+  bias: "none"
+  task_type: "CAUSAL_LM"
+  target_modules:
+    - "q_proj"
+    - "k_proj"
+    - "v_proj"
+    - "o_proj"
+    - "gate_proj"
+    - "up_proj"
+    - "down_proj"
+    - "lm_head"
+
+sft_schema:
+  user: 'instruction'
+  context: 'context'
+  assistant: 'response'
+
+sft_params:
+  output_dir: "./models/taught_models/sft/"
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  gradient_accumulation_steps: 4
+  max_grad_norm: 0.3
+  gradient_checkpointing: True
+  learning_rate: 2.e-5
+  lr_scheduler_type: "constant"
+  # max_steps: 200
+  num_train_epochs: 2
+  fp16: False
+  bf16: True
+  save_steps: 225
+  logging_steps: 25
+  optim: "paged_adamw_32bit"
+  warmup_ratio: 0.03
+  evaluation_strategy: "steps"
+  report_to: []
+
+dpo_params: 
+  output_dir: "./models/taught_models/dpo/"
+  dpo_beta: 0.1
+  per_device_train_batch_size: 32
+  per_device_eval_batch_size: 32
+  gradient_accumulation_steps: 4
+  max_grad_norm: 0.3
+  gradient_checkpointing: True
+  learning_rate: 2.e-5
+  lr_scheduler_type: "constant"
+  # max_steps: 200
+  num_train_epochs: 2
+  fp16: False
+  bf16: True
+  save_steps: 225
+  logging_steps: 25
+  optim: "paged_adamw_32bit"
+  warmup_ratio: 0.03
+  evaluation_strategy: "steps"
+  report_to: []

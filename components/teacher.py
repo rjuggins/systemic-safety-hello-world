@@ -1,11 +1,8 @@
-"""Class orchestrating training of worker. Includes running benchmarks and calling PMs.
-This is distinct from the Instructor class, which is used to instruction-tune models before
-they are loaded into the Worker class."""
+"""Class orchestrating training of worker. Consists of SFT followed by DPO."""
 
-from datasets import load_dataset
+from datasets import load_dataset, Dataset
 from peft import LoraConfig, PeftModel, get_peft_model
-from transformers import TrainingArguments
-from trl import DPOTrainer
+from trl import DPOTrainer, DPOConfig
 from huggingface_hub import HfApi
 from huggingface_hub.utils._errors import RepositoryNotFoundError
 
@@ -19,7 +16,8 @@ class Teacher:
                 Must contain:
                     lora_params (dict): LoraConfig parameters
                     teaching_params (dict): TrainingArguments parameters
-                    dpo_beta (float): beta parameter for DPOTrainer
+                    sft_schema (dict): Keys for user and assistant content in dataset,
+                        plus context if exists (which is appended to user content)
                 May contain:
                     model_repo_id (str): Name of HF repo to push trained model to
                     checkpoint_name (str): Name of model checkpoint to be pushed
@@ -29,7 +27,7 @@ class Teacher:
 
         self.lora_params = config["lora_params"]
         self.training_params = config["teaching_params"]
-        self.beta = config["dpo_beta"]
+        self.schema = config["sft_schema"]
         self.model_repo_id = config.get("model_repo_id")
         self.checkpoint_name = config.get("checkpoint_name")
 
@@ -45,9 +43,73 @@ class Teacher:
         else:
             self.max_prompt_length = config["max_prompt_length"]
 
+    def load_data(self, data_path, seed=42, sample_frac=None, sft_frac=0.5):
+        """Load dataset and split into SFT and DPO datasets.
+        
+        Args:
+            data_path (str): Path to dpo dataset
+            seed (int): Seed for shuffling dataset
+            sample_frac (float): Downsample dataset by this fraction
+            sft_frac (float): Fraction of data to use for SFT rather than DPO
+        """
+
+        dataset = load_dataset('json', data_files={'train': data_path})['train'].shuffle(seed=seed)
+
+        if sample_frac is not None:
+            dataset = dataset.select(range(int(len(dataset) * sample_frac)))
+
+        print(range(int(len(dataset) * sft_frac)))
+        sft_dataset = dataset.select(range(int(len(dataset) * sft_frac)))
+        print(range(int(len(dataset) * sft_frac), int(len(dataset))))
+        dpo_dataset = dataset.select(range(int(len(dataset) * sft_frac), len(dataset)))
+
+    def process_sft_data(self, test_size=0.0):
+        """Format SFT dataset and load into Dataset objects.
+
+        Args:
+            test_size (float): Fraction of data to use for validation
+        """
+
+        # Create keys for components of instruction data
+        user = self.schema["user"]
+        context = self.schema["context"]
+        assistant = self.schema["assistant"]
+
+        # Reformat data with role/content structure
+        examples = []
+        for example in self.sft_dataset:
+            example_message = [{"role": "user"}, {"role": "assistant"}]
+
+            if len(example[context]) > 0:
+                example_message[0]["content"] = (
+                    example[user] + " " + example[context]
+                )
+            else:
+                example_message[0]["content"] = example[user]
+            example_message[1]["content"] = example[assistant]
+            examples.append(example_message)
+
+        # Apply chat template to examples
+        examples = [
+            self.tokenizer.apply_chat_template(example, tokenize=False)
+            for example in examples
+        ]
+
+        # Load into Dataset classes
+        if test_size == 0:
+            self.train_dataset = Dataset.from_dict({'text':examples})
+            self.test_dataset = None
+        else:
+            full_dataset = Dataset.from_dict({'text':examples})
+
+            # Split the dataset into training and testing
+            split_datasets = full_dataset.train_test_split(test_size=test_size)
+            self.train_dataset = split_datasets["train"]
+            self.test_dataset = split_datasets["test"]
+
     @staticmethod
     def dpo_format(example):
-        """Format Anthropic HH data as a dictionary with 'prompt', 'chosen', and 'rejected' keys."""
+        """Format DPO dataset as a dictionary with 'prompt', 'chosen', and 'rejected' keys."""
 
         chosen_list = example['chosen'].split()
         rejected_list = example['rejected'].split()
@@ -63,15 +125,10 @@ class Teacher:
             'rejected':rejected
         }
 
-    def load_data(self, data_path):
-        """Load DPO datase into Dataset object.
+    def process_dpo_data(self):
+        """Apply formatting to DPO dataset."""
         
-        Args:
-            data_path (str): Path to dpo dataset
-        """
-
-        dataset = load_dataset('json', data_files={'train': data_path})
-        self.teaching_dataset = dataset['train'].map(self.dpo_format)
+        self.dpo_dataset = self.dpo_dataset.map(self.dpo_format)
 
     # @staticmethod
     # def encode(examples, tokenizer, max_length):
@@ -100,7 +157,7 @@ class Teacher:
     #         self.test_dataset = self.test_dataset.map(encode_with_tokenizer, batched=True)
     #         self.test_dataset = self.test_dataset.remove_columns("text")
 
-    def train_model(self, worker):
+    def sft_train_model(self, worker):
         """Teach Worker model.
 
         Args:
@@ -114,7 +171,38 @@ class Teacher:
         new_worker.print_trainable_parameters()
 
         # Training arguments
-        training_args = TrainingArguments(**self.training_params)
+        training_args = DPOConfig(**self.training_params)
+
+        # Create DPO trainer
+        trainer = DPOTrainer(
+            new_worker,
+            ref_model=None,
+            args=training_args,
+            train_dataset=self.teaching_dataset,
+            tokenizer=worker.tokenizer,
+            peft_config=peft_config,
+            beta=self.beta,
+            max_length=self.max_length,
+            max_prompt_length=self.max_prompt_length
+        )
+
+        trainer.train()
+
+    def dpo_train_model(self, worker):
+        """Teach Worker model.
+
+        Args:
+            worker (Worker): Worker that has been failed by an overseer
+        """
+
+        # LoRA configuration
+        peft_config = LoraConfig(**self.lora_params)
+
+        new_worker = get_peft_model(worker.model, peft_config)
+        new_worker.print_trainable_parameters()
+
+        # Training arguments
+        training_args = DPOConfig(**self.training_params)
 
         # Create DPO trainer
         trainer = DPOTrainer(
