@@ -61,5 +61,5 @@ training_params:
   logging_steps: 25
   optim: "paged_adamw_32bit"
   warmup_ratio: 0.03
-  evaluation_strategy: "steps"
+  eval_strategy: "steps"
   report_to: []

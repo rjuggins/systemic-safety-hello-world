@@ -82,7 +82,7 @@ class Worker:
         """Load model weights and initialise tokenizer."""
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id, token=self.hf_auth, padding_side="left"
+            self.model_id, token=self.hf_auth, padding_side="right"
         )
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
