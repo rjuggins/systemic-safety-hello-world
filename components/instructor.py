@@ -51,7 +51,7 @@ class Instructor:
         self.data_path = config["instruction_data_path"]
         self.schema = config["instruction_schema"]
         self.quantization = config["quantization"]
-        self.bnb_params = config.get('bnb_params')
+        self.bnb_params = config.get("bnb_params")
         self.lora_params = config["lora_params"]
         self.training_params = config["training_params"]
         self.packing = config["packing"]
@@ -79,11 +79,9 @@ class Instructor:
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
 
-        model_config = AutoConfig.from_pretrained(
-            self.model_id, token=self.hf_auth
-        )
-        
-        self.device_map = 'auto'
+        model_config = AutoConfig.from_pretrained(self.model_id, token=self.hf_auth)
+
+        self.device_map = "auto"
         self.model_repo_id = config.get("model_repo_id")
         self.checkpoint_name = config.get("checkpoint_name")
 
@@ -91,7 +89,9 @@ class Instructor:
         """Load model weights and initialise tokenizer."""
 
         self.tokenizer = AutoTokenizer.from_pretrained(
-            self.model_id, token=self.hf_auth, padding_side="right" # left is for inference
+            self.model_id,
+            token=self.hf_auth,
+            padding_side="right",  # left is for inference
         )
         self.tokenizer.pad_token = self.tokenizer.eos_token
 
@@ -102,14 +102,12 @@ class Instructor:
                 self.model_id,
                 quantization_config=self.bnb_config,
                 device_map=self.device_map,
-                token=self.hf_auth
+                token=self.hf_auth,
             )
 
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_id,
-                device_map=self.device_map,
-                token=self.hf_auth
+                self.model_id, device_map=self.device_map, token=self.hf_auth
             )
 
         self.model.config.window = self.sliding_window
@@ -158,10 +156,10 @@ class Instructor:
 
         # Load into Dataset classes
         if test_size == 0:
-            self.train_dataset = Dataset.from_dict({'text':examples})
+            self.train_dataset = Dataset.from_dict({"text": examples})
             self.test_dataset = None
         else:
-            full_dataset = Dataset.from_dict({'text':examples})
+            full_dataset = Dataset.from_dict({"text": examples})
 
             # Split the dataset into training and testing
             split_datasets = full_dataset.train_test_split(test_size=test_size)
@@ -215,7 +213,7 @@ class Instructor:
             peft_config=peft_config,
             tokenizer=self.tokenizer,
             args=training_args,
-            packing=self.packing
+            packing=self.packing,
         )
 
         trainer.train()
@@ -236,13 +234,21 @@ class Instructor:
 
         # Check if the repository exists
         if repo_exists(self.model_repo_id, self.hf_auth):
-            print(f"Not pushing model as repository {self.model_repo_id} already exists.")
+            print(
+                f"Not pushing model as repository {self.model_repo_id} already exists."
+            )
         else:
             if self.checkpoint_name is not None:
-                model_dir = os.path.join(self.training_params["output_dir"], self.checkpoint_name)
+                model_dir = os.path.join(
+                    self.training_params["output_dir"], self.checkpoint_name
+                )
                 # Clear GPU cache
                 torch.cuda.empty_cache()
-                checkpoint_model = AutoModelForCausalLM.from_pretrained(model_dir, device_map='auto')
-                checkpoint_model.push_to_hub(self.model_repo_id, use_auth_token=self.hf_auth)
+                checkpoint_model = AutoModelForCausalLM.from_pretrained(
+                    model_dir, device_map="auto"
+                )
+                checkpoint_model.push_to_hub(
+                    self.model_repo_id, use_auth_token=self.hf_auth
+                )
             else:
                 self.model.push_to_hub(self.model_repo_id, use_auth_token=self.hf_auth)

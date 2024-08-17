@@ -7,11 +7,18 @@ os.environ["TOKENIZERS_PARALLELISM"] = "false"
 import torch
 from torch import cuda
 from peft import PeftModel
-from transformers import AutoConfig, AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import (
+    AutoConfig,
+    AutoTokenizer,
+    AutoModelForCausalLM,
+    BitsAndBytesConfig,
+)
 
 
 class Worker:
-    def __init__(self, model_id, lora_id=None, mode="eval", hf_auth=None, bnb_params=None):
+    def __init__(
+        self, model_id, lora_id=None, mode="eval", hf_auth=None, bnb_params=None
+    ):
         """Chatbot responding to requests.
 
         Args:
@@ -93,16 +100,14 @@ class Worker:
                 self.model_id,
                 quantization_config=self.bnb_config,
                 device_map=self.device_map,
-                token=self.hf_auth
+                token=self.hf_auth,
             )
 
         else:
             self.model = AutoModelForCausalLM.from_pretrained(
-                self.model_id,
-                device_map=self.device_map,
-                token=self.hf_auth
+                self.model_id, device_map=self.device_map, token=self.hf_auth
             )
-        
+
         if self.lora_id is not None:
             self.model = PeftModel.from_pretrained(self.model, self.lora_id)
 

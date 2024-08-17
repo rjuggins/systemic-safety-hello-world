@@ -83,7 +83,7 @@ class Teacher:
 
     def load_data(self, data_path, seed=42, sample_frac=None, sft_frac=0.5):
         """Load dataset and split into SFT and DPO datasets.
-        
+
         Args:
             data_path (str): Path to dpo dataset
             seed (int): Seed for shuffling dataset
@@ -91,15 +91,21 @@ class Teacher:
             sft_frac (float): Fraction of data to use for SFT rather than DPO
         """
 
-        dataset = load_dataset('json', data_files={'train': data_path})['train'].shuffle(seed=seed)
+        dataset = load_dataset("json", data_files={"train": data_path})[
+            "train"
+        ].shuffle(seed=seed)
 
         if sample_frac is not None:
             dataset = dataset.select(range(int(len(dataset) * sample_frac)))
 
         print(f"Samples 0 to {int(len(dataset) * sft_frac)-1} assigned to SFT dataset.")
         self.sft_dataset = dataset.select(range(int(len(dataset) * sft_frac)))
-        print(f"Samples {int(len(dataset) * sft_frac)} to {int(len(dataset))} assigned to DPO dataset.")
-        self.dpo_dataset = dataset.select(range(int(len(dataset) * sft_frac), len(dataset)))
+        print(
+            f"Samples {int(len(dataset) * sft_frac)} to {int(len(dataset))} assigned to DPO dataset."
+        )
+        self.dpo_dataset = dataset.select(
+            range(int(len(dataset) * sft_frac), len(dataset))
+        )
 
     def process_sft_data(self, test_size=0.1):
         """Format SFT dataset and load into Dataset objects.
@@ -110,12 +116,17 @@ class Teacher:
 
         # Reformat data with role/content structure
         examples = []
-        for example in self.sft_dataset['chosen']:
+        for example in self.sft_dataset["chosen"]:
             chosen_list = example.split()
-            response_index = len(chosen_list) - 1 - chosen_list[::-1].index('Assistant:') # Find final Assistant index
-            prompt = ' '.join(chosen_list[:response_index])
-            chosen = ' '.join(chosen_list[response_index:])
-            formatted_example = [{'role':'user', 'content':prompt}, {'role':'assistant', 'content':chosen}]
+            response_index = (
+                len(chosen_list) - 1 - chosen_list[::-1].index("Assistant:")
+            )  # Find final Assistant index
+            prompt = " ".join(chosen_list[:response_index])
+            chosen = " ".join(chosen_list[response_index:])
+            formatted_example = [
+                {"role": "user", "content": prompt},
+                {"role": "assistant", "content": chosen},
+            ]
             examples.append(formatted_example)
 
         # Apply chat template to examples
@@ -125,7 +136,7 @@ class Teacher:
         ]
 
         # Load into Dataset class
-        sft_full_dataset = Dataset.from_dict({'text':examples})
+        sft_full_dataset = Dataset.from_dict({"text": examples})
 
         # Split the dataset into training and testing
         split_datasets = sft_full_dataset.train_test_split(test_size=test_size)
@@ -136,23 +147,19 @@ class Teacher:
     def dpo_format(example):
         """Format DPO dataset as a dictionary with 'prompt', 'chosen', and 'rejected' keys."""
 
-        chosen_list = example['chosen'].split()
-        rejected_list = example['rejected'].split()
-        response_index = len(chosen_list) - 1 - chosen_list[::-1].index('Assistant:')
+        chosen_list = example["chosen"].split()
+        rejected_list = example["rejected"].split()
+        response_index = len(chosen_list) - 1 - chosen_list[::-1].index("Assistant:")
 
-        prompt = '<s>[INST] ' + ' '.join(chosen_list[:response_index]) + '  [/INST] '
-        chosen = ' '.join(chosen_list[response_index:]) + '  </s>'
-        rejected = ' '.join(rejected_list[response_index:]) + '  </s>'
+        prompt = "<s>[INST] " + " ".join(chosen_list[:response_index]) + "  [/INST] "
+        chosen = " ".join(chosen_list[response_index:]) + "  </s>"
+        rejected = " ".join(rejected_list[response_index:]) + "  </s>"
 
-        return {
-            'prompt':prompt,
-            'chosen':chosen,
-            'rejected':rejected
-        }
+        return {"prompt": prompt, "chosen": chosen, "rejected": rejected}
 
     def process_dpo_data(self, test_size=0.1):
         """Apply formatting to DPO dataset."""
-        
+
         self.dpo_dataset = self.dpo_dataset.map(self.dpo_format)
 
         # Split the dataset into training and testing
@@ -180,7 +187,7 @@ class Teacher:
             peft_config=sft_peft_config,
             tokenizer=self.tokenizer,
             args=training_args,
-            packing=self.packing
+            packing=self.packing,
         )
 
         trainer.train()
@@ -208,7 +215,7 @@ class Teacher:
             peft_config=peft_config,
         )
 
-        trainer.train()        
+        trainer.train()
 
     def push_model(self, model_repo_id, checkpoint_name=None, output_dir=None):
         """Push trained model or checkpoint to Hugging Face Hub.
@@ -238,7 +245,9 @@ class Teacher:
                 model_dir = os.path.join(output_dir, checkpoint_name)
                 # Clear GPU cache
                 torch.cuda.empty_cache()
-                checkpoint_model = AutoModelForCausalLM.from_pretrained(model_dir, device_map='auto')
+                checkpoint_model = AutoModelForCausalLM.from_pretrained(
+                    model_dir, device_map="auto"
+                )
                 checkpoint_model.push_to_hub(model_repo_id, use_auth_token=self.hf_auth)
             else:
                 self.model.push_to_hub(model_repo_id, use_auth_token=self.hf_auth)
@@ -249,8 +258,8 @@ class Teacher:
         self.push_model(
             self.sft_model_repo_id,
             self.sft_checkpoint_name,
-            self.sft_params["output_dir"]
-            )
+            self.sft_params["output_dir"],
+        )
 
     def push_dpo_model(self):
         """Push DPO model to Hugging Face Hub."""
@@ -258,5 +267,5 @@ class Teacher:
         self.push_model(
             self.dpo_model_repo_id,
             self.dpo_checkpoint_name,
-            self.dpo_params["output_dir"]
-            )
+            self.dpo_params["output_dir"],
+        )
