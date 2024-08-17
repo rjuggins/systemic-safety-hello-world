@@ -17,9 +17,8 @@ from transformers import (
     AutoTokenizer,
     AutoModelForCausalLM,
     BitsAndBytesConfig,
-    TrainingArguments
 )
-from trl import SFTTrainer
+from trl import SFTConfig, SFTTrainer
 from huggingface_hub import HfApi
 from huggingface_hub.utils._errors import RepositoryNotFoundError
 
@@ -66,13 +65,14 @@ class Instructor:
 
         # If max_length defined in config, use that value, if not use default
         if config.get("max_length") is None:
-            self.max_length = 512
+            max_length = 512
         else:
-            self.max_length = config["max_length"]
+            max_length = config["max_length"]
+        self.training_params["max_seq_length"] = max_length
 
         # If sliding_window defined in config, use that value, if not use default
         if config.get("sliding_window") is None:
-            self.sliding_window = self.max_length // 2
+            self.sliding_window = max_length // 2
         else:
             self.sliding_window = config["sliding_window"]
 
@@ -205,7 +205,7 @@ class Instructor:
         lora_model.print_trainable_parameters()
 
         # Training arguments
-        training_args = TrainingArguments(**self.training_params)
+        training_args = SFTConfig(**self.training_params)
 
         # Create trainer
         trainer = SFTTrainer(
@@ -213,8 +213,6 @@ class Instructor:
             train_dataset=self.train_dataset,
             eval_dataset=self.test_dataset,
             peft_config=peft_config,
-            dataset_text_field="text",
-            max_seq_length=self.max_length,
             tokenizer=self.tokenizer,
             args=training_args,
             packing=self.packing

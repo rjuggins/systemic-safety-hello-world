@@ -1,8 +1,12 @@
 # Teacher parameters
-taught_model_id: "instruction_mistral_7b_v1_2_epochs_live_dpo"
-max_length: 1536
-max_prompt_length: 1024
+sft_model_repo_id: rjuggins/instruction_mistral_7b_v1_2_epochs_live_sft
+dpo_model_repo_id: rjuggins/instruction_mistral_7b_v1_2_epochs_live_dpo
+sft_checkpoint_name: "checkpoint-8"
+dpo_checkpoint_name: "checkpoint-17"
+max_length: 512
+max_prompt_length: 256
 packing: False
+hf_key_path: './keys/hf_key.txt'
 
 lora_params: 
   r: 32
@@ -33,8 +37,8 @@ sft_params:
   num_train_epochs: 2
   fp16: False
   bf16: True
-  save_steps: 225
-  logging_steps: 25
+  save_steps: 8
+  logging_steps: 4
   optim: "paged_adamw_32bit"
   warmup_ratio: 0.03
   eval_strategy: "steps"
@@ -43,20 +47,20 @@ sft_params:
 
 dpo_params: 
   output_dir: "./models/taught_models/dpo/"
-  dpo_beta: 0.1
-  per_device_train_batch_size: 32
-  per_device_eval_batch_size: 32
+  beta: 0.1
+  per_device_train_batch_size: 16
+  per_device_eval_batch_size: 16
   gradient_accumulation_steps: 4
   max_grad_norm: 0.3
   gradient_checkpointing: True
   learning_rate: 2.e-5
   lr_scheduler_type: "constant"
   # max_steps: 200
-  num_train_epochs: 2
+  num_train_epochs: 1
   fp16: False
   bf16: True
-  save_steps: 225
-  logging_steps: 25
+  save_steps: 22
+  logging_steps: 5
   optim: "paged_adamw_32bit"
   warmup_ratio: 0.03
   eval_strategy: "steps"

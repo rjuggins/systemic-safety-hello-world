@@ -62,4 +62,5 @@ training_params:
   optim: "paged_adamw_32bit"
   warmup_ratio: 0.03
   eval_strategy: "steps"
+  dataset_text_field: "text"
   report_to: []
