@@ -12,14 +12,10 @@ test_frac: 0.02
 
 # Data parameters
 instruction_data_path: './data/databricks-dolly-15k/databricks-dolly-15k.jsonl'
-# instruction_data_path: './data/python_code_instructions_18k_alpaca/python_code_instructions_18k_alpaca.jsonl'
 instruction_schema:
   user: 'instruction'
   context: 'context'
   assistant: 'response'
-  # user: 'instruction'
-  # context: 'input'
-  # assistant: 'output'
 
 bnb_params:
   load_in_4bit: True

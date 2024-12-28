@@ -17,7 +17,12 @@ from transformers import (
 
 class Worker:
     def __init__(
-        self, model_id, lora_id=None, mode="eval", hf_auth=None, bnb_params=None
+        self,
+        model_id: str,
+        lora_id: str | None = None,
+        mode: str = "eval",
+        hf_auth: str | None = None,
+        bnb_params: dict | None = None,
     ):
         """Chatbot responding to requests.
 
@@ -38,21 +43,16 @@ class Worker:
         self.device = f"cuda:{cuda.current_device()}" if cuda.is_available() else "cpu"
         print(f"Device: {self.device}")
 
-        # model_config = AutoConfig.from_pretrained(model_id, use_auth_token=hf_auth)
-
-        # with init_empty_weights():
-        #     self.model = AutoModelForCausalLM.from_config(model_config)
-
         self.device_map = "auto"
 
         # Create worker prompt template
         self.create_prompt_template()
 
-    def create_prompt_template(self, examples=None):
+    def create_prompt_template(self, examples: list[dict] | None = None):
         """Create a prompt template to feed to apply_chat_template.
 
         Args:
-            examples (list(dict)): Dictionaries of '"role": "user", "content":'
+            examples (list[dict]): Dictionaries of '"role": "user", "content":'
                 and '"role": "assistant", "content":' pairs containing few shot examples
         """
 
@@ -72,18 +72,6 @@ class Worker:
                     "content": "Got it. I am a helpful and harmless assistant. How can I help?",
                 },
             ]
-
-    # def check_device_map(self, no_split_module_classes=[]):
-    #     """Check model fits on GPUs.
-    #     Args:
-    #         no_split_module_classes (list(str)): Class names of layers not to split
-    #             between devices
-    #     """
-
-    #     self.device_map = infer_auto_device_map(
-    #         self.model, no_split_module_classes=no_split_module_classes
-    #     )
-    #     print(self.device_map)
 
     def load_model(self):
         """Load model weights and initialise tokenizer."""
@@ -117,8 +105,12 @@ class Worker:
         print(f"Model loaded on {self.device}")
 
     def generate_text(
-        self, queries, min_additional_len=50, num_return_sequences=1, temperature=1.0
-    ):
+        self,
+        queries: list[str],
+        min_additional_len: int = 50,
+        num_return_sequences: int = 1,
+        temperature: float = 1.0,
+    ) -> list[str]:
         """Generate text from a prompt.
 
         Args:

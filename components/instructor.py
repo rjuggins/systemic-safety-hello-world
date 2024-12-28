@@ -24,7 +24,7 @@ from huggingface_hub.utils._errors import RepositoryNotFoundError
 
 
 class Instructor:
-    def __init__(self, config):
+    def __init__(self, config: dict):
         """Class that instruction-tunes base models.
 
         Args:
@@ -116,7 +116,7 @@ class Instructor:
 
         print(f"Model loaded on {self.device}")
 
-    def load_data(self, test_size=0.0):
+    def load_data(self, test_size: float = 0.0):
         """Load instruction dataset, reformat, and load into Dataset objects.
 
         Args:
@@ -166,33 +166,6 @@ class Instructor:
             self.train_dataset = split_datasets["train"]
             self.test_dataset = split_datasets["test"]
 
-    # @staticmethod
-    # def encode(examples, tokenizer, max_length):
-    #     """Static method to map tokenizer over dataset. Fails if tries to use self.tokenizer."""
-    #     return tokenizer(
-    #         examples["text"],
-    #         padding="max_length",
-    #         truncation=True,
-    #         max_length=max_length
-    #         )
-
-    # def tokenize_data(self):
-    #     """Tokenize train and test datasets."""
-
-    #     # Prefill self.encode tokenizer argument
-    #     encode_with_tokenizer = partial(
-    #         self.encode, tokenizer=self.tokenizer, max_length=self.max_length
-    #         )
-
-    #     # Tokenize train dataset
-    #     self.train_dataset = self.train_dataset.map(encode_with_tokenizer, batched=True)
-    #     self.train_dataset = self.train_dataset.remove_columns("text")
-
-    #     # If exists, tokenize test dataset
-    #     if self.test_dataset is not None:
-    #         self.test_dataset = self.test_dataset.map(encode_with_tokenizer, batched=True)
-    #         self.test_dataset = self.test_dataset.remove_columns("text")
-
     def train_model(self):
         """Instruction-tune model."""
 
@@ -225,7 +198,7 @@ class Instructor:
         api = HfApi()
 
         # Function to check if the repo exists
-        def repo_exists(repo_id, token):
+        def repo_exists(repo_id: str, token: str) -> bool:
             try:
                 api.repo_info(repo_id=repo_id, token=token)
                 return True

@@ -2,7 +2,7 @@
 
 
 class Overseer:
-    def __init__(self, helpfulness_thresh=4, harmlessness_thresh=4):
+    def __init__(self, helpfulness_thresh: int = 4, harmlessness_thresh: int = 4):
         """Monitors performance of worker and sends for retraining if below thresholds.
         Idea is for it to periodically check (perhaps in a realistic setting checking
         every output would be onerous.)
@@ -19,7 +19,9 @@ class Overseer:
         self.helpfulness_failure_count = 0
         self.harmlessness_failure_count = 0
 
-    def evaluate(self, helpfulness_rating, harmlessness_rating):
+    def evaluate(
+        self, helpfulness_rating: int, harmlessness_rating: int
+    ) -> tuple[bool, bool]:
         """Evaluate whether helpfulness and harmlessness ratings are acceptable.
         Note: This is a bit overengineered as I am actually rating every single
         response and passing the ratings here, rather than the (assumed to be)

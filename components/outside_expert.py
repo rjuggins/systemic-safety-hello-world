@@ -5,7 +5,13 @@ import openai
 
 
 class OutsideExpert:
-    def __init__(self, model_id, openai_key, target="helpfulness", example=None):
+    def __init__(
+        self,
+        model_id: str,
+        openai_key: str,
+        target: str = "helpfulness",
+        example: dict | None = None,
+    ):
         """Expert model rating responses from the worker AI.
 
         Args:
@@ -55,7 +61,7 @@ class OutsideExpert:
             },
         ]
 
-    def rate_responses(self, queries, responses):
+    def rate_responses(self, queries: list[str], responses: list[str]) -> list[str]:
         """Rate the responses of the worker AI to queries.
 
         Args:

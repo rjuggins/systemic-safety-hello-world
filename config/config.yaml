@@ -12,10 +12,8 @@ harmlessness_test_data: './data/harmless-base/test.jsonl'
 harmlessness_train_data: './data/harmless-base/train.jsonl'
 
 # Model parameters
-# model_id: 'mistralai/Mistral-7B-Instruct-v0.1'
 model_id: 'mistralai/Mistral-7B-v0.1'
 lora_id: rjuggins/instruction_mistral_7b_v1_2_epochs_test
-# lora_test_id: rjuggins/instruction_mistral_7b_v1_2_epochs_test
 max_length: 1536
 hf_key_path: '../keys/hf_key.txt'
 

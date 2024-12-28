@@ -7,7 +7,6 @@ import torch
 from components.instructor import Instructor
 
 if __name__ == "__main__":
-
     # Load config file into dictionary
     with open("./config/instructor_config.yaml", "r") as file:
         config = yaml.safe_load(file)

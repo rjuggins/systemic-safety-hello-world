@@ -2,10 +2,16 @@
 
 import json
 import numpy as np
+from collections.abc import Iterator
 
 
 class User:
-    def __init__(self, mode="dataset", data_path=None, model_id=None):
+    def __init__(
+        self,
+        mode: str = "dataset",
+        data_path: str | None = None,
+        model_id: str | None = None,
+    ):
         """Simulation of user submitting queries to worker model.
 
         Args:
@@ -28,7 +34,7 @@ class User:
         else:
             raise ValueError("`mode` must be either 'dataset' or 'model'.")
 
-    def stream_jsonl(self, data_path):
+    def stream_jsonl(self, data_path: str) -> Iterator[dict]:
         """Create iterable generator from dataset in dataset mode.
 
         Args:
@@ -42,7 +48,7 @@ class User:
         for line in lines:
             yield json.loads(line)
 
-    def get_query(self):
+    def get_query(self) -> str:
         """Get a query from the user."""
 
         if self.mode == "dataset":

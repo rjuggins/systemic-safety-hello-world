@@ -2,6 +2,7 @@
 
 import os
 import torch
+import components
 from transformers import TrainingArguments, AutoModelForCausalLM
 from datasets import load_dataset, Dataset
 from peft import LoraConfig, PeftModel, get_peft_model
@@ -11,7 +12,7 @@ from huggingface_hub.utils._errors import RepositoryNotFoundError
 
 
 class Teacher:
-    def __init__(self, config):
+    def __init__(self, config: dict):
         """Class that uses DPO to teach a Worker that has been failed by an overseer.
 
         Args:
@@ -67,8 +68,8 @@ class Teacher:
         else:
             self.sliding_window = config["sliding_window"]
 
-    def load_worker(self, worker):
-        """Load Worker that has been failed by an overseer.
+    def load_worker(self, worker: components.worker.Worker):
+        """Load Worker that has been failed by an Overseer.
 
         Args:
             worker (Worker): Worker object to teach
@@ -81,7 +82,13 @@ class Teacher:
         self.model.enable_input_require_grads()
         self.model.gradient_checkpointing_enable()
 
-    def load_data(self, data_path, seed=42, sample_frac=None, sft_frac=0.5):
+    def load_data(
+        self,
+        data_path: str,
+        seed: int = 42,
+        sample_frac: float | None = None,
+        sft_frac: float = 0.5,
+    ):
         """Load dataset and split into SFT and DPO datasets.
 
         Args:
@@ -107,7 +114,7 @@ class Teacher:
             range(int(len(dataset) * sft_frac), len(dataset))
         )
 
-    def process_sft_data(self, test_size=0.1):
+    def process_sft_data(self, test_size: float = 0.1):
         """Format SFT dataset and load into Dataset objects.
 
         Args:
@@ -144,7 +151,7 @@ class Teacher:
         self.sft_test_dataset = split_datasets["test"]
 
     @staticmethod
-    def dpo_format(example):
+    def dpo_format(example: dict) -> dict:
         """Format DPO dataset as a dictionary with 'prompt', 'chosen', and 'rejected' keys."""
 
         chosen_list = example["chosen"].split()
@@ -157,7 +164,7 @@ class Teacher:
 
         return {"prompt": prompt, "chosen": chosen, "rejected": rejected}
 
-    def process_dpo_data(self, test_size=0.1):
+    def process_dpo_data(self, test_size: float = 0.1):
         """Apply formatting to DPO dataset."""
 
         self.dpo_dataset = self.dpo_dataset.map(self.dpo_format)
@@ -217,7 +224,12 @@ class Teacher:
 
         trainer.train()
 
-    def push_model(self, model_repo_id, checkpoint_name=None, output_dir=None):
+    def push_model(
+        self,
+        model_repo_id: str,
+        checkpoint_name: str | None = None,
+        output_dir: str | None = None,
+    ):
         """Push trained model or checkpoint to Hugging Face Hub.
 
         Args:

@@ -63,7 +63,6 @@ class System:
         """Iterate through all system steps."""
 
         for step in range(self.config["num_steps"]):
-
             print(f"Step {step+1}/{self.config['num_steps']}:")
 
             # Get user query
