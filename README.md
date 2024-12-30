@@ -4,25 +4,25 @@ This is really simple first go at testing an AI system for unexpected failure mo
 
 ## Get started
 
-Seeing as this code is not finished, you can't actually run it all the way through (in particular, the re-training steps will not happen). Roughly speaking, the way you would use it if completed is as follows:
+Seeing as this code is not finished, you can't actually run it all the way through (in particular, the re-training steps will not happen). Roughly speaking, you would use a completed version as follows:
 
 - Clone the repository
 - Download [instruction-tuning](https://huggingface.co/datasets/databricks/databricks-dolly-15k) and [helpfulness and harmlessness](https://github.com/anthropics/hh-rlhf) datasets, and save in the directory `./data/`
-- Create a directory called `./keys/` and save a Hugging Face write access token in a file called `hf_key.txt`, then save an OpenAI API key in a file called `openai_key.txt`
+- Create a directory called `./keys/`. Save a Hugging Face write access token in a file called `hf_key.txt` and an OpenAI API key in a file called `openai_key.txt`
 - Make sure `./config/instructor_config.yaml` is configured in a way that matches your model and filenames, modify the training parameters if you think they can be improved, and set the `save_steps` and `checkpoint_name` parameters to ensure the right checkpoint is pushed to the Hugging Face hub
 - Run `python instruction_tuning.py` to instruction tune your model and push it to the Hugging Face hub
 - Make sure `./config/config.yaml` and `./config/teacher_config.yaml` contain the right filenames, save steps, and checkpoint names, and modify the training parameters if you wish
 - Set your system parameters in `./config/config.yaml`. These are: 
     - `num_steps`: Total number of system iterations
     - `overseer_steps`: Number of steps between each *Overseer* intercept
-    - `helpfulness_thresh`: Rating threshold below which (inclusive) the *Worker* is sent for helpfulness retraining
-    - `harmlessness_thresh`: Rating threshold below which (inclusive) the *Worker* is sent for harmlessness retraining
+    - `helpfulness_thresh`: Rating threshold at or below which the *Worker* is sent for helpfulness retraining
+    - `harmlessness_thresh`: Rating threshold at or below which the *Worker* is sent for harmlessness retraining
 - Run `python run_system.py`
 - View measurements of system performance
 
 ## Project goals
 
-The idea of this project was to construct a system of interacting components and then sweep through various parameters to identify phases of behaviour. These phases could then be differentiated by whether they are 'good' or 'bad', and whether or not they are surprising. By discovering bad 'unknown unknown' phases, patterns of behaviour that I did not expect in advance, this would function as a way of measuring complex system failures. This was not meant as comprehensive solution, but as the starting point of a larger investigation (hence, 'Hello World').
+The idea of this project was to construct a system of interacting components and then sweep through various parameters to identify phases of behaviour. These phases could then be differentiated by whether they are 'good' or 'bad', and whether or not they are surprising. By discovering bad 'unknown unknown' phases -- patterns of behaviour that I did not expect in advance -- this would function as a way of measuring complex system failures. This was not meant as comprehensive solution, but as the starting point of a larger investigation (hence, 'Hello World').
 
 ![System phases](./images/unknown_unknowns.png)
 
@@ -32,7 +32,7 @@ The system is centred around a *Worker* LLM, and also contains a *User*, an *Ove
 
 1. The *User* sends a query to the *Worker*
 2. The *Worker* responds to the query
-3. The *Overseer* periodically intercepts the response and sends it to two *Outside Experts*
+3. The *Overseer* periodically (e.g. every 5 interactions) intercepts the response and sends it to two *Outside Experts*
 4. The *Outside Experts* rate the response for helpfulness and harmlessness and send the ratings back to the *Overseer*
 5. The *Overseer* checks if either rating is above a re-training threshold, and then:
     - If the ratings are high enough, the *Overseer* does nothing and we return to step 1
