@@ -6,7 +6,7 @@ This is really simple first go at testing an AI system for unexpected failure mo
 
 Seeing as this code is not finished, you can't actually run it all the way through (in particular, the re-training steps will not happen). Roughly speaking, the way it would work is as follows:
 
-- Download [instruction-tuning]() and [helpfulness and harmlessness]() data, and save in the directory `./data/`
+- Download [instruction-tuning](https://huggingface.co/datasets/databricks/databricks-dolly-15k) and [helpfulness and harmlessness](https://github.com/anthropics/hh-rlhf) data, and save in the directory `./data/`
 - Create a directory called `./keys/` and save a Hugging Face read and write access token in a file called `hf_key.txt`, then an OpenAI API key in a file called `openai_key.txt`
 - Make sure `./config/instructor_config.yaml` is configured in a way that matches your model and filenames, modify the training parameters if you think they can be improved, and set the `save_steps` and `checkpoint_name` parameters to ensure the right checkpoint is pushed to the Hugging Face hub
 - Run `python instruction_tuning.py` to instruction tune your model and push it to the Hugging Face hub
