@@ -55,6 +55,6 @@ The original idea was that querying the Experts would be done only during a peri
 
 ## Support
 
-If you are interested in any of this and have questions, please email [Richard Juggins](richard.juggins@gmail.com). If you would like to leave anonymous feedback, please use my [feedback form][def].
+If you are interested in any of this and have questions, please email [Richard Juggins](mailto:richard.juggins@gmail.com). If you would like to leave anonymous feedback, please use my [feedback form][def].
 
 [def]: https://docs.google.com/forms/d/e/1FAIpQLSdyisSOndK1H1JT0NAbnA35LJgoJrl9f_NiJi1FEljCr7-kJg/viewform
