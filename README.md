@@ -42,6 +42,7 @@ The system is centred around a *Worker* LLM, and also contains a *User*, an *Ove
 7. If either rating below threshold, *Worker* is sent to the *Teacher* for re-training in that domain, and then return to step 1
 
 ![System diagram](./images/systemic_safety_hello_world.png)
+*Blue boxes are LLMs, purple are scaffolding, green are strings passed between components. The User was intended to be an LLM, but I didn’t that far and instead just implemented a class that samples from a dataset of queries. Solid lines represent actions that happen at every step, dashed happen conditionally (in the case of the Response and the User, this would only happen if it were actually an LLM).*
 
 There are two other components not part of regular system operation: 
 
