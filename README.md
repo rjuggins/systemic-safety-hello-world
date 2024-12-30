@@ -27,7 +27,7 @@ For a more detailed explanation of what I was trying to achieve, please read my 
 
 The idea was to construct a system of interacting components and then sweep through various parameters to identify phases of behaviour. These phases could then be differentiated by whether the system behaviour is good or bad and whether it is surprising.
 
-![System phases]("./images/unknown_unknowns.png")
+![System phases](./images/unknown_unknowns.png)
 
 ### Planned system structure
 
@@ -41,7 +41,7 @@ The system is centred around a *Worker* LLM, and also contains a *User*, an *Ove
 6. If ratings high enough, return to step 1
 7. If either rating below threshold, *Worker* is sent to the *Teacher* for re-training in that domain, and then return to step 1
 
-![System diagram]("./images/systemic_safety_hello_world.png")
+![System diagram](./images/systemic_safety_hello_world.png)
 
 There are two other components not part of regular system operation: 
 
