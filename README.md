@@ -1,6 +1,6 @@
 # Systemic Safety Hello World
 
-This is really simple first go at testing an AI system for unexpected failure modes. It is not finished as I did not have access to sufficient compute.
+This is really simple first go at testing an AI system for unexpected failure modes. It is not finished as I did not have access to sufficient compute. For a more detailed explanation of what I was trying to achieve, please read my [Substack post]().
 
 ## Get started
 
@@ -19,17 +19,13 @@ Seeing as this code is not finished, you can't actually run it all the way throu
 - Run `python run_system.py`
 - View measurements of system performance (not many are implemented)
 
-## Documentation
-
-For a more detailed explanation of what I was trying to achieve, please read my [Substack post]().
-
-### Project goals
+## Project goals
 
 The idea was to construct a system of interacting components and then sweep through various parameters to identify phases of behaviour. These phases could then be differentiated by whether the system behaviour is good or bad and whether it is surprising.
 
 ![System phases](./images/unknown_unknowns.png)
 
-### Planned system structure
+## Planned system structure
 
 The system is centred around a *Worker* LLM, and also contains a *User*, an *Overseer*, an *Outside Expert*, and a *Teacher*. The *Outside Expert* is also an LLM, whereas the others are generic bits of code (I wanted to make the *User* an LLM too but didn’t get that far). The operation of the system was intended to run as follows:
 
