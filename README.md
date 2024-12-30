@@ -31,7 +31,7 @@ The idea was to construct a system of interacting components and then sweep thro
 
 ### Planned system structure
 
-The system is centred around a *Worker* LLM, and also contains a *User*, an *Overseer*, an *Outside Expert*, and a *Teacher*. The *Outside Expert* is also an LLM, whereas the others are bits of scaffolding (I wanted to make the *User* an LLM too but didn’t get that far). The operation of the system was intended to run as follows:
+The system is centred around a *Worker* LLM, and also contains a *User*, an *Overseer*, an *Outside Expert*, and a *Teacher*. The *Outside Expert* is also an LLM, whereas the others are generic bits of code (I wanted to make the *User* an LLM too but didn’t get that far). The operation of the system was intended to run as follows:
 
 1. *User* sends a query to the *Worker*
 2. *Worker* responds to query
@@ -42,7 +42,7 @@ The system is centred around a *Worker* LLM, and also contains a *User*, an *Ove
 7. If either rating below threshold, *Worker* is sent to the *Teacher* for re-training in that domain, and then return to step 1
 
 ![System diagram](./images/systemic_safety_hello_world.png)
-*Blue boxes are LLMs, purple are scaffolding, green are strings passed between components. The User was intended to be an LLM, but I didn’t that far and instead just implemented a class that samples from a dataset of queries. Solid lines represent actions that happen at every step, dashed happen conditionally (in the case of the Response and the User, this would only happen if it were actually an LLM).*
+*Blue boxes are LLMs, purple are other bits of code, green are strings passed between components. The User was intended to be an LLM, but I didn’t that far and instead just implemented a class that samples from a dataset of queries. Solid lines represent actions that happen at every step, dashed happen conditionally (in the case of the Response and the User, this would only happen if it were actually an LLM).*
 
 There are two other components not part of regular system operation: 
 
